@@ -1,6 +1,7 @@
 import re
 import sys
 import inspect
+import bottle
 
 
 _py2 = sys.version_info[0] == 2
@@ -25,6 +26,21 @@ def route(rule, **options):
 
     return decorator
 
+def get(rule, **options):
+    options['method'] = 'GET'
+    return route(rule, **options)
+
+def post(rule, **options):
+    options['method'] = 'POST'
+    return route(rule, **options)
+
+def put(rule, **options):
+    options['method'] = 'PUT'
+    return route(rule, **options)
+
+def delete(rule, **options):
+    options['method'] = 'DELETE'
+    return route(rule, **options)
 
 class BottleView(object):
     """ Class based view implementation for bottle (following flask-classy architech)
@@ -39,8 +55,13 @@ class BottleView(object):
     def register(cls, app, base_route=None, route_prefix=None):
         """ Register all the possible routes of the subclass
         :param app: bottle app instance
+        :type app: bottle.Bottle
         :param base_route: prepend to the route rule (/base_route/<class_name OR route_prefix>)
+        :type base_route: str or unicode or None
         :param route_prefix: used when want to register custom rule, which is not class name
+        :type route_prefix: str or unicode or None
+        :return None
+        :rtype None
         """
         if cls is BottleView:
             raise TypeError("cls must be a subclass of BottleView, not BottleView itself")
@@ -107,7 +128,7 @@ class BottleView(object):
                     cls._app.route(callback=callable_method, path=rule,
                                    method=method, name=endpoint, **options)
 
-            print ("%s : %s, Endpoint: %s" % (method, rule, endpoint))
+            print ("{0:s} : {1:s}, Endpoint: {2:s}".format(method, rule, endpoint))
 
     @classmethod
     def _build_route_rule(cls, func_name, *method_args):

@@ -52,7 +52,7 @@ class BottleView(object):
     view_identifier = "view"
 
     @classmethod
-    def register(cls, app, base_route=None, route_prefix=None):
+    def register(cls, app, base_route=None, route_prefix=None, members_to_ignore=()):
         """ Register all the possible routes of the subclass
         :param app: bottle app instance
         :type app: bottle.Bottle
@@ -71,7 +71,7 @@ class BottleView(object):
         cls.base_route = base_route or cls.base_route
         # import ipdb; ipdb.set_trace()
         # get all the valid members of  the class to register Endpoints
-        routes = cls._get_interesting_members(BottleView)
+        routes = cls._get_interesting_members(BottleView, members_to_ignore=members_to_ignore)
 
         # initialize the class
         klass = cls()
@@ -132,7 +132,13 @@ class BottleView(object):
 
     @classmethod
     def _build_route_rule(cls, func_name, *method_args):
-
+        """
+        Returns a regex route string from the func & args.
+        :param func_name: name of the function to build the route
+        :param method_args: any custom/specific settings/transformations  for building the route.
+        :return: regex str of the built route
+        :rtype: str or unicode
+        """
         klass_name = cls.__name__.lower()
         klass_name = (klass_name[:-len(cls.view_identifier)]
                       if klass_name.endswith(cls.view_identifier)
@@ -167,8 +173,13 @@ class BottleView(object):
         return result
 
     @classmethod
-    def _get_interesting_members(cls, base_class):
-        """Returns a list of methods that can be routed to"""
+    def _get_interesting_members(cls, base_class, members_to_ignore=()):
+        """
+        Returns a list of methods that can be routed to.
+        :param base_class: class to get members from.
+        :param members_to_ignore: any members we wish to explicitly ignore adding.
+        :return: list of interesting members [attached] to the class
+        """
         base_members = dir(base_class)
         predicate = inspect.ismethod if _py2 else inspect.isfunction
         all_members = inspect.getmembers(cls, predicate=predicate)
@@ -176,7 +187,7 @@ class BottleView(object):
                 if not member[0] in base_members
                 and ((hasattr(member[1], "__self__")
                       and not member[1].__self__ in cls.__class__.__mro__) if _py2 else True)
-                and not member[0].startswith("_")]
+                and not member[0].startswith("_") and member[0] not in members_to_ignore]
 
 
 def join_paths(*path_pieces):
